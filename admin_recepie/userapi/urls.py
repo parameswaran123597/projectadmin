@@ -6,4 +6,5 @@ urlpatterns = [
     path('addrecipie/', views.create_recipe, name='addrecipie'),
     path('passwordchg/', views.ChangePassword, name='passwordchg'),
     path('deleterec/', views.DeleteRecipie, name='deleterec'),
+    path('listrec/', views.all_recipes, name='listrec'),
 ]

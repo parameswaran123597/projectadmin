@@ -161,3 +161,27 @@ def DeleteRecipie(request):
     recipe.delete()
 
     return Response({"message": "Recipe deleted successfully"})
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from recipie.models import Recipie
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def all_recipes(request):
+
+    recipes = Recipie.objects.all().order_by('-date')
+
+    data = []
+
+    for r in recipes:
+        data.append({
+            "id": r.id,
+            "title": r.title,
+            "owner": r.user.name,
+            "views": r.views,
+            "image": request.build_absolute_uri(r.images.url) if r.images else None
+        })
+
+    return Response(data)
