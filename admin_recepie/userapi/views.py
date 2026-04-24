@@ -100,3 +100,64 @@ def create_recipe(request):
         },
         status=HTTP_200_OK
     )
+
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from django.http import JsonResponse
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def ChangePassword(request):
+
+    user = request.user
+
+    old_password = request.data.get("old_password")
+    new_password = request.data.get("new_password")
+    confirm_password = request.data.get("confirm_password")
+
+    # Check fields
+    if not old_password or not new_password or not confirm_password:
+        return JsonResponse({'message': 'All fields are required'})
+
+    # Check old password
+    if not user.check_password(old_password):
+        return JsonResponse({'message': 'Old password is incorrect'})
+
+    # Check new password match
+    if new_password != confirm_password:
+        return JsonResponse({'message': 'Passwords do not match'})
+
+    # Set new password
+    user.set_password(new_password)
+    user.save()
+
+    return JsonResponse({'message': 'Password changed successfully'}, status=200)
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from recipie.models import Recipie
+from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def DeleteRecipie(request):
+
+    recipe_id = request.query_params.get("id")
+
+    if not recipe_id:
+        return Response({"error": "Recipe id is required"})
+
+    try:
+        recipe = Recipie.objects.get(id=recipe_id)
+    except Recipie.DoesNotExist:
+        return Response({"error": "Recipe not found"}, status=HTTP_404_NOT_FOUND)
+
+    # 🔒 Check owner
+    if recipe.user != request.user:
+        return Response({"error": "Not allowed"}, status=HTTP_403_FORBIDDEN)
+
+    recipe.delete()
+
+    return Response({"message": "Recipe deleted successfully"})
