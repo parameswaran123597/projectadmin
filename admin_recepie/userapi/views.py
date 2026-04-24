@@ -181,7 +181,128 @@ def all_recipes(request):
             "title": r.title,
             "owner": r.user.name,
             "views": r.views,
-            "image": request.build_absolute_uri(r.images.url) if r.images else None
+            "images": request.build_absolute_uri(r.images.url) if r.images else None
         })
+
+    return Response(data)
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from recipie.models import Recipie
+from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_recipe(request, id):
+
+    try:
+        recipe = Recipie.objects.get(id=id)
+    except Recipie.DoesNotExist:
+        return Response({"error": "Recipe not found"}, status=HTTP_404_NOT_FOUND)
+
+    # 🔒 Only owner can view (optional, but recommended)
+    if recipe.user != request.user:
+        return Response({"error": "Not allowed"}, status=HTTP_403_FORBIDDEN)
+
+    data = {
+        "id": recipe.id,
+        "title": recipe.title,
+        "ingredients": recipe.ingredients,
+        "steps": recipe.steps,
+        "cooking_time": recipe.cooking_time,
+        "difficulty_level": recipe.difficulty_level,
+        "images": request.build_absolute_uri(recipe.images.url) if recipe.images else None
+    }
+
+    return Response(data)
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from recipie.models import Recipie
+from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN, HTTP_200_OK
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def edit_recipe(request, id):
+
+    try:
+        recipe = Recipie.objects.get(id=id)
+    except Recipie.DoesNotExist:
+        return Response({"error": "Recipe not found"}, status=HTTP_404_NOT_FOUND)
+
+    # 🔒 Only owner can edit
+    if recipe.user != request.user:
+        return Response({"error": "Not allowed"}, status=HTTP_403_FORBIDDEN)
+
+    # Update fields
+    recipe.title = request.data.get("title", recipe.title)
+    recipe.ingredients = request.data.get("ingredients", recipe.ingredients)
+    recipe.steps = request.data.get("steps", recipe.steps)
+    recipe.cooking_time = request.data.get("cooking_time", recipe.cooking_time)
+    recipe.difficulty_level = request.data.get("difficulty_level", recipe.difficulty_level)
+
+    # Update image if provided
+    if request.FILES.get("images"):
+        recipe.images = request.FILES.get("images")
+
+    recipe.save()
+
+    return Response({"message": "Recipe updated successfully"}, status=HTTP_200_OK)
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from recipie.models import Recipie
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def MyRecipies(request):
+
+    recipes = Recipie.objects.filter(user=request.user).order_by('-date')
+
+    data = []
+
+    for r in recipes:
+        data.append({
+            "id": r.id,
+            "title": r.title,
+            "views": r.views,
+            "images": request.build_absolute_uri(r.images.url) if r.images else None
+        })
+
+    return Response(data)
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from recipie.models import Recipie
+from rest_framework.status import HTTP_404_NOT_FOUND
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def RecipieDetails(request, id):
+
+    try:
+        recipe = Recipie.objects.get(id=id)
+    except Recipie.DoesNotExist:
+        return Response({"error": "Recipe not found"}, status=HTTP_404_NOT_FOUND)
+
+    # 👁️ increase views
+    recipe.views += 1
+    recipe.save()
+
+    data = {
+        "id": recipe.id,
+        "title": recipe.title,
+        "owner": recipe.user.name,
+        "views": recipe.views,
+        "ingredients": recipe.ingredients,
+        "steps": recipe.steps,
+        "cooking_time": recipe.cooking_time,
+        "difficulty_level": recipe.difficulty_level,
+        "images": request.build_absolute_uri(recipe.images.url) if recipe.images else None
+    }
 
     return Response(data)
