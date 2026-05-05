@@ -11,8 +11,8 @@ def Signup(request):
     email = request.data.get("email")
     password = request.data.get("password")
     name = request.data.get("name")
-    phone = request.data.get("phone")
-    image = request.FILES.get("image")
+   
+    
   
 
     # Validation
@@ -31,8 +31,8 @@ def Signup(request):
 
     # Save extra fields
     user.name = name
-    user.phone_number = phone
-    user.images = image
+   
+  
     user.save()
 
     return JsonResponse({'message': 'User created successfully'}, status=200)
@@ -144,23 +144,23 @@ from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN
 @permission_classes([IsAuthenticated])
 def DeleteRecipie(request):
 
-    recipe_id = request.query_params.get("id")
+    recipie_id = request.query_params.get("id")
 
-    if not recipe_id:
+    if not recipie_id:
         return Response({"error": "Recipe id is required"})
 
     try:
-        recipe = Recipie.objects.get(id=recipe_id)
+        recipie = Recipie.objects.get(id=recipie_id)
     except Recipie.DoesNotExist:
-        return Response({"error": "Recipe not found"}, status=HTTP_404_NOT_FOUND)
+        return Response({"error": "Recipie not found"}, status=HTTP_404_NOT_FOUND)
 
     # 🔒 Check owner
-    if recipe.user != request.user:
+    if recipie.user != request.user:
         return Response({"error": "Not allowed"}, status=HTTP_403_FORBIDDEN)
 
-    recipe.delete()
+    recipie.delete()
 
-    return Response({"message": "Recipe deleted successfully"})
+    return Response({"message": "Recipie deleted successfully"})
 
 
 from rest_framework.decorators import api_view
@@ -171,51 +171,24 @@ from recipie.models import Recipie
 @permission_classes([IsAuthenticated])
 def all_recipes(request):
 
-    recipes = Recipie.objects.all().order_by('-date')
+    recipies = Recipie.objects.all().order_by('-date')
 
     data = []
 
-    for r in recipes:
+    for r in recipies:
         data.append({
             "id": r.id,
             "title": r.title,
             "owner": r.user.name,
             "views": r.views,
+            "difficulty_level": r.difficulty_level,
+            "date": r.date,
             "images": request.build_absolute_uri(r.images.url) if r.images else None
         })
 
     return Response(data)
 
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from recipie.models import Recipie
-from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_recipe(request, id):
-
-    try:
-        recipe = Recipie.objects.get(id=id)
-    except Recipie.DoesNotExist:
-        return Response({"error": "Recipe not found"}, status=HTTP_404_NOT_FOUND)
-
-    # 🔒 Only owner can view (optional, but recommended)
-    if recipe.user != request.user:
-        return Response({"error": "Not allowed"}, status=HTTP_403_FORBIDDEN)
-
-    data = {
-        "id": recipe.id,
-        "title": recipe.title,
-        "ingredients": recipe.ingredients,
-        "steps": recipe.steps,
-        "cooking_time": recipe.cooking_time,
-        "difficulty_level": recipe.difficulty_level,
-        "images": request.build_absolute_uri(recipe.images.url) if recipe.images else None
-    }
-
-    return Response(data)
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -228,26 +201,26 @@ from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN, HTTP_2
 def edit_recipe(request, id):
 
     try:
-        recipe = Recipie.objects.get(id=id)
+        recipie = Recipie.objects.get(id=id)
     except Recipie.DoesNotExist:
         return Response({"error": "Recipe not found"}, status=HTTP_404_NOT_FOUND)
 
     # 🔒 Only owner can edit
-    if recipe.user != request.user:
+    if recipie.user != request.user:
         return Response({"error": "Not allowed"}, status=HTTP_403_FORBIDDEN)
 
     # Update fields
-    recipe.title = request.data.get("title", recipe.title)
-    recipe.ingredients = request.data.get("ingredients", recipe.ingredients)
-    recipe.steps = request.data.get("steps", recipe.steps)
-    recipe.cooking_time = request.data.get("cooking_time", recipe.cooking_time)
-    recipe.difficulty_level = request.data.get("difficulty_level", recipe.difficulty_level)
+    recipie.title = request.data.get("title", recipie.title)
+    recipie.ingredients = request.data.get("ingredients", recipie.ingredients)
+    recipie.steps = request.data.get("steps", recipie.steps)
+    recipie.cooking_time = request.data.get("cooking_time", recipie.cooking_time)
+    recipie.difficulty_level = request.data.get("difficulty_level", recipie.difficulty_level)
 
     # Update image if provided
     if request.FILES.get("images"):
-        recipe.images = request.FILES.get("images")
+        recipie.images = request.FILES.get("images")
 
-    recipe.save()
+    recipie.save()
 
     return Response({"message": "Recipe updated successfully"}, status=HTTP_200_OK)
 
@@ -260,15 +233,17 @@ from recipie.models import Recipie
 @permission_classes([IsAuthenticated])
 def MyRecipies(request):
 
-    recipes = Recipie.objects.filter(user=request.user).order_by('-date')
+    recipies = Recipie.objects.filter(user=request.user).order_by('-date')
 
     data = []
 
-    for r in recipes:
+    for r in recipies:
         data.append({
             "id": r.id,
             "title": r.title,
             "views": r.views,
+            "date": r.date,
+            "difficulty_level": r.difficulty_level,        
             "images": request.build_absolute_uri(r.images.url) if r.images else None
         })
 
@@ -285,24 +260,57 @@ from rest_framework.status import HTTP_404_NOT_FOUND
 def RecipieDetails(request, id):
 
     try:
-        recipe = Recipie.objects.get(id=id)
+        recipie = Recipie.objects.get(id=id)
     except Recipie.DoesNotExist:
         return Response({"error": "Recipe not found"}, status=HTTP_404_NOT_FOUND)
 
     # 👁️ increase views
-    recipe.views += 1
-    recipe.save()
+    recipie.views += 1
+    recipie.save()
 
     data = {
-        "id": recipe.id,
-        "title": recipe.title,
-        "owner": recipe.user.name,
-        "views": recipe.views,
-        "ingredients": recipe.ingredients,
-        "steps": recipe.steps,
-        "cooking_time": recipe.cooking_time,
-        "difficulty_level": recipe.difficulty_level,
-        "images": request.build_absolute_uri(recipe.images.url) if recipe.images else None
+        "id": recipie.id,
+        "title": recipie.title,
+        "owner": recipie.user.name,
+        "views": recipie.views,
+        "ingredients": recipie.ingredients,
+        "steps": recipie.steps,
+        "cooking_time": recipie.cooking_time,
+        "difficulty_level": recipie.difficulty_level,
+        "images": request.build_absolute_uri(recipie.images.url) if recipie.images else None
     }
 
     return Response(data)
+
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def UpdateProfile(request):
+
+    user = request.user
+
+    name = request.data.get("name")
+    email = request.data.get("email")
+
+    if name:
+        user.name = name
+    if email:
+        user.email = email
+
+    user.save()
+
+    return Response({"message": "Profile updated successfully"})    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def UserProfile(request):
+    user = request.user
+
+    return Response({
+        "name": user.name,
+        "email": user.email
+    })    

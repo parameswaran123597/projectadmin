@@ -27,11 +27,11 @@
 
 <div class="card-body">
 
-<form method="POST">
+<form method="POST" action="">
 {% csrf_token %}
 <div class="form-group">
-<label>Username*</label>
-<input type="text" name="username" class="form-control" required>
+<label>Email*</label>
+<input type="email" name="email" class="form-control" required>
 </div>
 
 <div class="form-group">

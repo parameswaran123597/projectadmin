@@ -22,8 +22,7 @@ class User(AbstractBaseUser):
     name = models.CharField(max_length =255) 
     is_active = models.BooleanField(default=True) 
     is_admin = models.BooleanField(default=False) 
-    phone_number = models.CharField(max_length=15, null=True, blank=True)
-    images = models.FileField(upload_to='user_images/', null=True, blank=True)
+   
     objects = UserManager() 
  
     USERNAME_FIELD = 'email'
@@ -42,4 +41,4 @@ class Recipie(models.Model):
         difficulty_level = models.CharField(max_length=50,choices=choice)
         views = models.IntegerField(default=0)
         date = models.DateTimeField(auto_now_add=True)
-        images = models.FileField(upload_to='recipie_images/', null=True, blank=True)
+        images = models.FileField(upload_to='', null=True, blank=True)

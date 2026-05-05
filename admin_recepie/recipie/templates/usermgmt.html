@@ -39,32 +39,42 @@
                 </thead>
 
                 <tbody>
+{% for user in users %}
+<tr>
+    <td>{{ forloop.counter }}</td>
 
-                    <tr>
-                        <td>1</td>
-                        <td>---</td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="custom-control custom-switch mr-2">
-                                    <input type="checkbox"
-                                           class="custom-control-input"
-                                           id="user1" checked>
-                                    <label class="custom-control-label"
-                                           for="user1"></label>
-                                </div>
+    <td>{{ user.name }}</td>  <!-- or user.email -->
 
-                                <span class="badge badge-success">Active</span>
-                            </div>
-                        </td>
+    <td>
+        <div class="d-flex align-items-center">
+            
+            <div class="custom-control custom-switch mr-2">
+                <input type="checkbox"
+                       class="custom-control-input"
+                       id="user{{ user.id }}"
+                       {% if user.is_active %}checked{% endif %}>
+                <label class="custom-control-label"
+                       for="user{{ user.id }}"></label>
+            </div>
 
-                        <td>
-                            <button class="btn btn-outline-info btn-sm">
-                                View
-                            </button>
-                        </td>
-                    </tr>
+            {% if user.is_active %}
+                <span class="badge badge-success">Active</span>
+            {% else %}
+                <span class="badge badge-danger">Blocked</span>
+            {% endif %}
 
-                </tbody>
+        </div>
+    </td>
+
+    <td>
+        <a href="{% url 'user_profile' user.id %}" 
+           class="btn btn-outline-info btn-sm">
+            View
+        </a>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
 
             </table>
 
